@@ -4,6 +4,8 @@
         "kernel.h": "c",
         "module.h": "c",
         "const.h": "c",
-        "align.h": "c"
+        "align.h": "c",
+        "kallsyms.h": "c",
+        "kprobes.h": "c"
     }
 }
