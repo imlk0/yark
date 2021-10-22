@@ -7,5 +7,6 @@
         "align.h": "c",
         "kallsyms.h": "c",
         "kprobes.h": "c"
-    }
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }
