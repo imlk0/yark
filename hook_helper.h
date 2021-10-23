@@ -23,6 +23,19 @@ static unsigned long lookup_addr_by_name(const char *name)
 }
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,11,0)
+#define FTRACE_OPS_FL_RECURSION FTRACE_OPS_FL_RECURSION_SAFE
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,11,0)
+#define ftrace_regs pt_regs
+
+static __always_inline struct pt_regs *ftrace_get_regs(struct ftrace_regs *fregs)
+{
+	return fregs;
+}
+#endif
+
 /*
 symbol_name: 被hook的函数名
 hook_function: 钩子函数的地址(替代被hook函数)
@@ -65,9 +78,13 @@ static int resolve_hook_address(struct ftrace_hook *hook)
 }
 
 // 被跟踪函数的回调函数
-static void notrace fh_ftrace_thunk(unsigned long ip, unsigned long parent_ip, struct ftrace_ops *ops, struct pt_regs *regs)
+static void notrace fh_ftrace_thunk(unsigned long ip, unsigned long parent_ip, struct ftrace_ops *ops, struct ftrace_regs *fregs)
 {
-    struct ftrace_hook *hook = container_of(ops, struct ftrace_hook, ops); // 获得hook结构的首地址
+    struct pt_regs *regs;
+    struct ftrace_hook *hook;
+
+    regs = ftrace_get_regs(fregs);
+    hook = container_of(ops, struct ftrace_hook, ops); // 获得hook结构的首地址
     if (!within_module(parent_ip, THIS_MODULE))                            // 防止被跟踪函数被递归调用
     {
         regs->ip = (unsigned long)hook->hook_function; //将ip篡改为用户实现的hook函数的指针
@@ -82,7 +99,7 @@ int fh_install_hook(struct ftrace_hook *hook)
     if (err)
         return err;
     hook->ops.func = fh_ftrace_thunk;
-    hook->ops.flags = FTRACE_OPS_FL_SAVE_REGS | FTRACE_OPS_FL_RECURSION_SAFE | FTRACE_OPS_FL_IPMODIFY;
+    hook->ops.flags = FTRACE_OPS_FL_SAVE_REGS | FTRACE_OPS_FL_RECURSION | FTRACE_OPS_FL_IPMODIFY;
     err = ftrace_set_filter_ip(&hook->ops, hook->orig_address, 0, 0); //只对被跟踪的函数进行ftrace
     if (err)
     {

@@ -1,6 +1,6 @@
-obj-m += yark.o
-
-LKMNAME += yark.ko
+MODULE = yark
+obj-m += $(MODULE).o
+$(MODULE)-objs := main.o command.o hide_port.o
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
@@ -9,14 +9,14 @@ clean:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
 
 install: all
-	sudo insmod yark.ko
+	sudo insmod $(MODULE).ko
 
 uninstall:
-	sudo rmmod yark.ko
+	sudo rmmod $(MODULE).ko
 
 test:
 	sudo dmesg -C
-	sudo insmod $(LKMNAME)
+	sudo insmod $(MODULE).ko
 	sudo netstat -antp
-	sudo rmmod $(LKMNAME)
+	sudo rmmod $(MODULE)
 	sudo dmesg

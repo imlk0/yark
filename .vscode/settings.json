@@ -6,7 +6,9 @@
         "const.h": "c",
         "align.h": "c",
         "kallsyms.h": "c",
-        "kprobes.h": "c"
+        "kprobes.h": "c",
+        "hook_helper.h": "c",
+        "ftrace.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }
