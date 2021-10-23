@@ -1,4 +1,6 @@
-obj-m += yark.o
+MODULE = yark
+obj-m += $(MODULE).o
+$(MODULE)-objs := main.o command.o
 
 LKMNAME += yark.ko
 
