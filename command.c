@@ -88,7 +88,7 @@ static struct attribute_group hide_port_attr_group = {
 int command_start(void) {
     int retval = 0;
 
-    pr_info(LOG_PREFIX "call command_start()");
+    pr_info(LOG_PREFIX "call command_start()\n");
 
     /* create /sys/kernel/${SYS_DIR_NAME}/ */
     module_kobj = kobject_create_and_add(SYS_DIR_NAME, kernel_kobj);
@@ -102,6 +102,6 @@ int command_start(void) {
 }
 
 void command_end(void) {
-    pr_info(LOG_PREFIX "call command_end()");
+    pr_info(LOG_PREFIX "call command_end()\n");
     kobject_put(module_kobj);
 }
