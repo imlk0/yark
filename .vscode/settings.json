@@ -1,14 +1,8 @@
 {
     "files.associations": {
-        "*.sql": "sql",
-        "kernel.h": "c",
-        "module.h": "c",
-        "const.h": "c",
-        "align.h": "c",
-        "kallsyms.h": "c",
-        "kprobes.h": "c",
-        "hook_helper.h": "c",
-        "ftrace.h": "c"
+        "types.h": "c",
+        "tcp.h": "c",
+        "yhook.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }
