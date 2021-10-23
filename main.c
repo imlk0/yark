@@ -1,7 +1,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include "hook_helper.h"
 
+#include "hook_helper.h"
 #include "command.h"
 #include "main.h"
 
