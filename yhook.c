@@ -1,7 +1,7 @@
 #include "yhook.h"
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0)
-static unsigned long lookup_addr_by_name(const char *name)
+unsigned long lookup_addr_by_name(const char *name)
 {
     struct kprobe kp = {
         .symbol_name = name};
@@ -14,7 +14,7 @@ static unsigned long lookup_addr_by_name(const char *name)
     return retval;
 }
 #else
-static unsigned long lookup_addr_by_name(const char *name)
+unsigned long lookup_addr_by_name(const char *name)
 {
     return kallsyms_lookup_name(name);
 }

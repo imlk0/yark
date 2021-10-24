@@ -1,5 +1,5 @@
-#ifndef YHOOK_H
-#define YHOOK_H
+#ifndef YARK_YHOOK_H
+#define YARK_YHOOK_H
 
 #include <linux/hashtable.h>
 #include <linux/slab.h>
@@ -34,11 +34,12 @@ struct ftrace_hook
 extern DECLARE_HASHTABLE(hook_function_list, HOOK_FUNCTION_HASH_TABLE_BITS);
 
 struct hook_function_info {
-    char * hook_function_name;
+    const char * hook_function_name;
     struct ftrace_hook* fhooker;
     struct hlist_node node;
 };
 
+unsigned long lookup_addr_by_name(const char *name);
 int hook_function_name_add(const char* fn_name,void *hook_fn,void *orig_fn);
 int hook_function_del(const char* fn_name);
 
