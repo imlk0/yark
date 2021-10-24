@@ -1,8 +1,11 @@
 {
     "files.associations": {
         "types.h": "c",
-        "tcp.h": "c",
-        "yhook.h": "c"
+        "yhook.h": "c",
+        "giveroot.h": "c",
+        "hide_port.h": "c",
+        "main.h": "c",
+        "command.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }
