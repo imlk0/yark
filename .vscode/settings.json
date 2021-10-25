@@ -1,11 +1,13 @@
 {
     "files.associations": {
+        "*.sql": "sql",
         "types.h": "c",
         "yhook.h": "c",
         "giveroot.h": "c",
         "hide_port.h": "c",
         "main.h": "c",
-        "command.h": "c"
+        "command.h": "c",
+        "kobject.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }
