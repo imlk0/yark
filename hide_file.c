@@ -154,7 +154,7 @@ struct linux_dirent {
                 previous_dir = current_dir;                                    \
             }                                                                  \
             offset += current_dir->d_reclen;                                   \
-        next_iter:                                                             \
+        next_iter: continue;                                                   \
         }                                                                      \
                                                                                \
         /* finally, copy back to overwrite the original results */             \
