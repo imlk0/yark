@@ -9,7 +9,6 @@
 
 struct hide_port_info {
     int port;
-    int protocol;
     struct hlist_node node;
 };
 
