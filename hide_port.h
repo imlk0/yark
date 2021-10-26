@@ -4,18 +4,12 @@
 #include <linux/hashtable.h>
 #include <linux/list.h>
 
-#define TCP 0
-#define UDP 1
-
 struct hide_port_info {
     int port;
-    struct hlist_node node;
+    struct hide_port_info *next;
 };
 
-#define HIDE_PORT_HASH_TABLE_BITS 5
-
-extern DECLARE_HASHTABLE(hide_port_info_list, HIDE_PORT_HASH_TABLE_BITS);
-
+struct hide_port_info *get_hide_port_info_list_head(void);
 int hide_port_init(void);
 int hide_port_exit(void);
 int hide_port_add(int port);
