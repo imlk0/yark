@@ -31,15 +31,18 @@ static ssize_t hide_port_kobj_list(struct kobject *kobj,
     size_t remain_size = PAGE_SIZE;
     size_t offset = 0;
     int count;
-    int bkt;
     struct hide_port_info *cur;
 
-    hash_for_each(hide_port_info_list, bkt, cur, node) {
+    cur = get_hide_port_info_list_head();
+    cur = cur->next;
+    while (cur != NULL)
+    {
         if (remain_size <= 0)
             break;
         count = scnprintf(buf + offset, remain_size, "%d\n", cur->port);
         remain_size -= count;
         offset += count;
+        cur = cur->next;    
     }
     return offset;
 }
