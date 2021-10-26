@@ -195,7 +195,7 @@ static void release_all_info(void) {
     struct hide_file_info *cur;
     int bkt;
 
-    hash_for_each(hide_file_info_list, bkt, cur, node) {
+    hash_for_each_safe(hide_file_info_list, bkt, cur, node) {
         hash_del(&cur->node);
         dput(cur->dentry);
         kfree(cur->path.name);
@@ -280,6 +280,9 @@ int hide_file_del(const char *pathname) {
             dput(cur->dentry);
             kfree(cur->path.name);
             kfree(cur);
+            /* we will soon return after call kfree() on `cur`, so it is safe to
+             * use hash_for_each_possible() instead of
+             * hash_for_each_possible_safe() */
             break;
         }
     }
