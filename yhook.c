@@ -96,14 +96,14 @@ static int fh_install_hook(struct ftrace_hook *hook) {
                             strlen(hook->symbol_name), 0);
     kfree(symbol_name_owned);
     if (err) {
-        pr_debug("ftrace_set_filter() failed: %d symbol: %s\n", err,
+        pr_err("ftrace_set_filter() failed: %d symbol: %s\n", err,
                  hook->symbol_name);
         return err;
     }
     /* enable tracing call */
     err = register_ftrace_function(&hook->ops);
     if (err) {
-        pr_debug("register_ftrace_function() failed: %d\n", err);
+        pr_err("register_ftrace_function() failed: %d\n", err);
         return err;
     }
     return 0;
@@ -115,7 +115,7 @@ static void fh_remove_hook(struct ftrace_hook *hook) {
 
     err = unregister_ftrace_function(&hook->ops);
     if (err)
-        pr_debug("unregister_ftrace_function() failed: %d\n", err);
+        pr_err("unregister_ftrace_function() failed: %d\n", err);
 }
 
 static inline void write_cr0_forced(unsigned long val) {
@@ -166,6 +166,8 @@ int hook_function_name_add(const char *fn_name, void *hook_fn, void *orig_fn) {
     struct hook_function_info *info;
     struct ftrace_hook *hooker;
     u32 hash;
+    int err;
+
     /* allocate for hooker */
     hooker =
         (struct ftrace_hook *)kmalloc(sizeof(struct ftrace_hook), GFP_KERNEL);
@@ -189,9 +191,9 @@ int hook_function_name_add(const char *fn_name, void *hook_fn, void *orig_fn) {
     info->hook_function_name = fn_name;
     info->fhooker = hooker;
     hash_add(hook_function_list, &info->node, hash);
-    fh_install_hook(hooker); // err deal
-    pr_info(LOG_PREFIX "add hook to %s\n", fn_name);
-    return 0;
+    err = fh_install_hook(hooker); // err deal
+    pr_info(LOG_PREFIX "add hook to %s return: %d\n", fn_name, err);
+    return err;
 }
 
 int hook_function_del(const char *fn_name) {

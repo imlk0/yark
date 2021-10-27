@@ -1,5 +1,15 @@
 # yark - Yet Another RootKit
 
+
+## Features
+
+- Hide kernel module from output of `lsmod`
+- Hide a specific process
+- Hide a specific TCP/UDP port
+- Hide file/directory
+- Make a process run as root user
+- A easy-to-use way to interact with kernel module
+
 ## How to Build
 
 ### Requirements
@@ -78,7 +88,7 @@ If 1 is written to `hide_module/vis`, the rookie module will be visible (default
 - e.g. If we want to hide the rookie module
 
     ```shell
-        echo -n "0" > /sys/kernel/yark/hide_module/vis
+    echo -n "0" > /sys/kernel/yark/hide_module/vis
     ```
 
 ### hide file
@@ -90,7 +100,7 @@ Writing amy file path to `hide_file/add` can hide the file, and writing the file
 - e.g. If we want to hide file `/tmp/test_hide_file`
 
     ```shell
-        echo -n "/home/chaos/Downloads/dist" > /sys/kernel/yark/hide_file/add
+    echo -n "/tmp/test_hide_file" > /sys/kernel/yark/hide_file/add
     ```
 
 ### hide process
@@ -102,7 +112,7 @@ Writing any PID to `hide_proc/add` can hide the process, and writing the PID to 
 - e.g. If we want to hide process with PID 1234
 
     ```shell
-        echo -n "1234" > /sys/kernel/yark/hide_proc/add
+    echo -n "1234" > /sys/kernel/yark/hide_proc/add
     ```
 
 ### hide port
@@ -114,7 +124,7 @@ Writing any port ID to `hide_port/add` can hide all the network activity of the 
 - e.g. If we want to hide port with ID 80
 
     ```shell
-        echo -n "80" > /sys/kernel/yark/hide_port/add
+    echo -n "80" > /sys/kernel/yark/hide_port/add
     ```
 
 ### privilege escalation
@@ -126,12 +136,12 @@ Writing any shell's PID to `give_root/give` can set the shell's UID to 0. Readin
 - e.g. If we have a shell with PID 1234 and want to change its user to root
 
     ```shell
-        echo -n "1234" > /sys/kernel/yark/give_root/give
+    echo -n "1234" > /sys/kernel/yark/give_root/give
     ```
 - e.g. If we want to change current shell's user to root
 
     ```shell
-        cat /sys/kernel/yark/give_root/giveme
+    cat /sys/kernel/yark/give_root/giveme
     ```
 
 ## Development
