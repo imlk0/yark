@@ -90,8 +90,7 @@ Writing amy file path to `hide_file/add` can hide the file, and writing the file
 - e.g. If we want to hide file `/tmp/test_hide_file`
 
     ```shell
-        echo -n "/home/chaos/Downloads/dist" \ 
-        > /sys/kernel/yark/hide_file/add
+        echo -n "/home/chaos/Downloads/dist" > /sys/kernel/yark/hide_file/add
     ```
 
 ### hide process
@@ -154,7 +153,7 @@ For developers using vscode, in order for vscode to know the kernel header files
                 "__KERNEL__"
             ],
             "includePath": [
-                "${workspaceFolder}/`",
+                "${workspaceFolder}/**",
                 "/lib/modules/${env:kernel_release}/build/include",
                 "/usr/lib/modules/${env:kernel_release}/build/arch/x86/include/asm",
                 "/usr/lib/modules/${env:kernel_release}/build/arch/x86/include",
