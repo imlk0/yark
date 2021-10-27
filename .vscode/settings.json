@@ -7,7 +7,8 @@
         "hide_port.h": "c",
         "main.h": "c",
         "command.h": "c",
-        "kobject.h": "c"
+        "kobject.h": "c",
+        "hide_module.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

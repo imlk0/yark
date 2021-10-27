@@ -129,5 +129,4 @@ int hide_port_exit() {
     }
     hide_port_info_list_tail = hide_port_info_list_head = NULL;
     return 0;
-    return 0;
 }

