@@ -193,9 +193,10 @@ int hide_file_init(void) {
 
 static void release_all_info(void) {
     struct hide_file_info *cur;
+    struct hlist_node *tmp;
     int bkt;
 
-    hash_for_each_safe(hide_file_info_list, bkt, cur, node) {
+    hash_for_each_safe(hide_file_info_list, bkt, tmp, cur, node) {
         hash_del(&cur->node);
         dput(cur->dentry);
         kfree(cur->path.name);
