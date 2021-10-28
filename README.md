@@ -54,30 +54,52 @@ We use `Makefile` to manage the build flow.
 
 ### control by file IO
     
-We use the method of writing to the file to control the rookie, and the /sys/kernel/yark file will be automatically generated when the module is loaded.
+We use the method of writing to the file to control the rookie, and the `/sys/kernel/yark` file will be automatically generated when the module is loaded.
 
 The corresponding file structure is as follows.
 
 ```shell
 ├── yark
-　　 ├── give_root
-　　 │　   ├── give
-　　 │　   └── giveme
-　　 ├── hide_file 
-　　 │　   ├── add
-　　 │　   ├── del
-　　 │　   └── list
-　　 ├── hide_module
-　　 │　   └── vis
-　　 ├── hide_port
-　　 │　   ├── add
-　　 │　   ├── del
-　　 │　   └── list
-　　 └── hide_proc
-　 　　　  ├── add
- 　　　　  ├── del
-　　　　   └── list
+    ├── give_root
+    │   ├── give
+    │   └── giveme
+    ├── hide_file
+    │   ├── add
+    │   ├── del
+    │   └── list
+    ├── hide_module
+    │   └── vis
+    ├── hide_port
+    │   ├── add
+    │   ├── del
+    │   └── list
+    ├── hide_proc
+    │   ├── add
+    │   ├── del
+    │   └── list
+    └── protect_proc
+        ├── add
+        ├── del
+        └── list
 ```
+
+### privilege escalation
+
+give_root can set any shell's UID to 0. (i.e. give_root can promote any shell's user to root)
+
+Writing any shell's PID to `give_root/give` can set the shell's UID to 0. Reading `give_root/giveme` can change current shell's user to root.
+
+- e.g. If we have a shell with PID 1234 and want to change its user to root
+
+    ```shell
+    echo -n "1234" > /sys/kernel/yark/give_root/give
+    ```
+
+- e.g. If we want to change current shell's user to root
+
+    ```shell
+    cat /sys/kernel/yark/give_root/giveme
+    ```
 
 ### hide module
 
@@ -127,21 +149,16 @@ Writing any port ID to `hide_port/add` can hide all the network activity of the 
     echo -n "80" > /sys/kernel/yark/hide_port/add
     ```
 
-### privilege escalation
+### protect process
 
-give_root can set any shell's UID to 0. (i.e. give_root can promote any shell's user to root)
+protect_proc can protect the specified process from being cleared by the `kill` instruction
 
-Writing any shell's PID to `give_root/give` can set the shell's UID to 0. Reading `give_root/giveme` can change current shell's user to root.
+Writing any PID to `protect_proc/add` can protect the process from being killed, and writing the PID to `protect_proc/del` can unprotect it. `protect_proc/list` records all the protected processes.
 
-- e.g. If we have a shell with PID 1234 and want to change its user to root
-
-    ```shell
-    echo -n "1234" > /sys/kernel/yark/give_root/give
-    ```
-- e.g. If we want to change current shell's user to root
+- e.g. If we want to protect process with PID 1234
 
     ```shell
-    cat /sys/kernel/yark/give_root/giveme
+    echo -n "1234" > /sys/kernel/yark/protect_proc/add
     ```
 
 ## Development

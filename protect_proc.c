@@ -7,7 +7,7 @@
 LIST_HEAD(protect_proc_info_list);
 
 static int protect_proccess(pid_t pid,int sig){
-    if (sig == SIGKILL){
+    if (sig == SIGKILL || sig == SIGTERM){
         struct protect_proc_info *pos;
         list_for_each_entry(pos,&protect_proc_info_list,list) {
             if (pos->pid == pid){
@@ -42,7 +42,7 @@ int protect_proc_init() {
 int protect_proc_add(pid_t pid) {
     struct protect_proc_info *info,*pos;
     
-    /* check if the port is already protected */
+    /* check if the pid is already protected */
     list_for_each_entry(pos,&protect_proc_info_list,list) {
        if (pos->pid == pid){
            pr_info(LOG_PREFIX "pid %d is already protected!\n",pid);
